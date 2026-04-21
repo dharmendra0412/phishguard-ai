@@ -90,8 +90,26 @@ async def scan_message(req: MessageRequest):
         heuristic_boost += 0.1
         found_keywords.append("URL detected")
 
-    # Combine (Cap at 0.99)
-    final_prob = min(0.99, ml_prob + heuristic_boost)
+    # 3. Safe Keywords (White-list boost)
+    safe_keywords = {
+        'internship': -0.2, 'assignment': -0.15, 'course': -0.1,
+        'student': -0.1, 'university': -0.1, 'certificate': -0.05,
+        'regards': -0.1, 'sincerely': -0.1, 'thank you': -0.1
+    }
+    
+    for word, weight in safe_keywords.items():
+        if word in text_lower:
+            heuristic_boost += weight
+
+    # 4. Personalized Greeting Detection (Dear + Name)
+    if "dear " in text_lower:
+        # If there's more than 2 words after "Dear", it's likely a specific name
+        words_after_dear = text_lower.split("dear ")[1].split()[:3]
+        if len(words_after_dear) >= 2:
+            heuristic_boost -= 0.15 # Trust personalized emails more
+
+    # Combine (Cap at 0.99, min 0.0)
+    final_prob = max(0.0, min(0.99, ml_prob + heuristic_boost))
     
     # False Positive Mitigation: If it looks professional but has promo words, downgrade to 'Marketing'
     is_marketing = False
