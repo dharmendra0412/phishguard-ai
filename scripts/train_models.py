@@ -30,7 +30,7 @@ def extract_url_features(url):
         return [0] * 7
 
 def train_url_model():
-    print("Training URL Classifier (Large-Scale)...")
+    print("Training URL Classifier (Ultimate Scale)...")
     import glob
     url_parts = glob.glob("data/processed/urls_cleaned_part_*.csv.gz")
     if not url_parts:
@@ -39,28 +39,27 @@ def train_url_model():
 
     dfs = [pd.read_csv(p) for p in url_parts]
     df = pd.concat(dfs, ignore_index=True)
-    sample_size = min(len(df), 100000) # Increased scale
+    sample_size = min(len(df), 200000) # Ultimate Scale
     df = df.sample(sample_size, random_state=42)
     X = np.array([extract_url_features(u) for u in df['url']])
-    y = df['label']
+    y = df['label'].values
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Use balanced weights for real-world imbalance
-    # Slightly reduced depth for better size/performance balance
+    # Random Forest with depth limit to keep model size small
     model = RandomForestClassifier(n_estimators=100, max_depth=15, n_jobs=-1, class_weight='balanced')
     model.fit(X_train, y_train)
     
     y_pred = model.predict(X_test)
     print(f"URL Model Accuracy: {accuracy_score(y_test, y_pred):.4f}")
     
-    # Use compress=3 to keep the file size under 25MB
+    # Save with compression level 3
     joblib.dump(model, "models/url_classifier.pkl", compress=3)
-    print("Saved Large-Scale URL model (Compressed).")
+    print("Saved Ultimate-Scale URL model (Compressed).")
 
 # --- SMS/Email Training ---
 def train_text_model():
-    print("Training Integrated Message Classifier (Large-Scale)...")
+    print("Training Integrated Message Classifier (Ultimate Scale)...")
     dfs = []
     if os.path.exists("data/processed/sms_spam_cleaned.csv.gz"):
         dfs.append(pd.read_csv("data/processed/sms_spam_cleaned.csv.gz"))
@@ -76,14 +75,16 @@ def train_text_model():
         return
 
     df = pd.concat(dfs, ignore_index=True).dropna().drop_duplicates()
+    sample_size = min(len(df), 100000) # Ultimate Scale
+    df = df.sample(sample_size, random_state=42)
     print(f"Combined text dataset: {len(df)} samples")
     
     X_train, X_test, y_train, y_test = train_test_split(df['text'], df['label'], test_size=0.2, random_state=42)
     
-    # ngram_range=(1, 2) captures phrases like "verify account"
-    vectorizer = TfidfVectorizer(max_features=10000, stop_words='english', ngram_range=(1, 2))
-    X_train_tfidf = vectorizer.fit_transform(X_train)
-    X_test_tfidf = vectorizer.transform(X_test)
+    # Vectorizer with bigrams and more features
+    vectorizer = TfidfVectorizer(max_features=15000, stop_words='english', ngram_range=(1, 2))
+    X_train_tfidf = vectorizer.fit_transform(X_train.astype(str))
+    X_test_tfidf = vectorizer.transform(X_test.astype(str))
     
     model = LogisticRegression(max_iter=2000, class_weight='balanced')
     model.fit(X_train_tfidf, y_train)
@@ -94,7 +95,7 @@ def train_text_model():
     # Compressed saving
     joblib.dump(model, "models/text_classifier.pkl", compress=3)
     joblib.dump(vectorizer, "models/tfidf_vectorizer.pkl", compress=3)
-    print("Saved Enhanced Text model and Vectorizer (Compressed).")
+    print("Saved Ultimate-Scale Text model and Vectorizer (Compressed).")
 
 if __name__ == "__main__":
     if not os.path.exists("models"):

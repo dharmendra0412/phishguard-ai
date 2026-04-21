@@ -28,8 +28,9 @@ def download_sms_spam():
         print(f"SMS Spam processed: {len(df)} rows (Compressed)")
 
 def download_url_dataset():
-    print("--- Processing Phishing URLs (Massive Scale: 650K+) ---")
+    print("--- Processing Phishing URLs (Ultimate Scale: 3M+) ---")
     mirrors = [
+        "https://urlhaus.abuse.ch/downloads/csv/",
         "https://raw.githubusercontent.com/mango-cat/ECS171-Project/main/malicious_phish.csv",
         "https://raw.githubusercontent.com/mildsam/Phishing-Detection-System/main/dataset_phishing.csv"
     ]
@@ -39,15 +40,20 @@ def download_url_dataset():
         r = download_file(url, "URL Dataset Mirror")
         if r:
             try:
-                df = pd.read_csv(io.StringIO(r.text))
-                # Detect columns (Ider-Zheng uses 'domain' and 'label')
-                url_col = 'domain' if 'domain' in df.columns else ('url' if 'url' in df.columns else df.columns[0])
-                label_col = 'label' if 'label' in df.columns else ('type' if 'type' in df.columns else df.columns[1])
+                if "urlhaus" in url:
+                    # URLhaus skip comment lines starting with #
+                    df = pd.read_csv(io.StringIO(r.text), skiprows=8)
+                    temp_df = pd.DataFrame()
+                    temp_df['url'] = df['url']
+                    temp_df['label'] = 1 # All in URLhaus are malicious
+                else:
+                    df = pd.read_csv(io.StringIO(r.text))
+                    url_col = 'url' if 'url' in df.columns else ('domain' if 'domain' in df.columns else df.columns[0])
+                    label_col = 'type' if 'type' in df.columns else ('label' if 'label' in df.columns else df.columns[1])
+                    temp_df = df[[url_col, label_col]].copy()
+                    temp_df.columns = ['url', 'label']
+                    temp_df['label'] = temp_df['label'].apply(lambda x: 0 if str(x).lower() in ['benign', 'safe', 'legitimate', '0', 'good'] else 1)
                 
-                temp_df = df[[url_col, label_col]].copy()
-                temp_df.columns = ['url', 'label']
-                # Label mapping: 'bad'/1 -> 1, 'good'/0 -> 0
-                temp_df['label'] = temp_df['label'].apply(lambda x: 1 if str(x).lower() in ['bad', 'phishing', 'malicious', '1', '1.0'] else 0)
                 all_dfs.append(temp_df)
                 print(f"Loaded {len(temp_df)} rows from mirror.")
             except Exception as e:
@@ -56,8 +62,8 @@ def download_url_dataset():
     if all_dfs:
         final_df = pd.concat(all_dfs, ignore_index=True).drop_duplicates()
         
-        # Split into chunks of 200,000 rows to ensure very small files
-        chunk_size = 200000
+        # Split into chunks of 300,000 rows for massive volume
+        chunk_size = 300000
         for i in range(0, len(final_df), chunk_size):
             chunk = final_df.iloc[i:i+chunk_size]
             part_num = (i // chunk_size) + 1
@@ -65,13 +71,13 @@ def download_url_dataset():
             chunk.to_csv(filename, index=False, compression='gzip')
             print(f"Saved {filename}: {len(chunk)} rows")
         
-        # Clean up old combined file
         if os.path.exists("data/processed/urls_cleaned.csv.gz"):
             os.remove("data/processed/urls_cleaned.csv.gz")
 
 def download_email_dataset():
-    print("--- Processing Phishing Emails (Ultra Scale: 50K+) ---")
+    print("--- Processing Phishing Emails (Ultimate Scale: 150K+) ---")
     mirrors = [
+        "https://huggingface.co/datasets/HoangPhuc/data_spam_email/resolve/main/combined_data.csv",
         "https://raw.githubusercontent.com/PuruSinghvi/Spam-Email-Classifier/main/Datasets/enron_spam_data.csv",
         "https://raw.githubusercontent.com/Matth-L/detectish/main/Phishing_Email.csv",
         "https://raw.githubusercontent.com/uzmabb182/Data_622/main/final_project_data_622/Phishing_Email.csv",
@@ -83,18 +89,17 @@ def download_email_dataset():
         r = download_file(url, "Email Dataset Mirror")
         if r:
             try:
-                # Handle Enron (sep may be different, usually csv)
                 df = pd.read_csv(io.StringIO(r.text))
-                df = df.dropna()
-                
-                # Detect columns (Enron uses 'Message' and 'Spam/Ham' or 'label')
-                text_col = [c for c in df.columns if c.lower() in ['message', 'email text', 'text']][0]
-                label_col = [c for c in df.columns if c.lower() in ['spam/ham', 'email type', 'label', 'is_phishing']][0]
+                # Detect columns flexibly
+                text_col = [c for c in df.columns if c.lower() in ['text', 'message', 'email text', 'body']][0]
+                label_col = [c for c in df.columns if c.lower() in ['label', 'spam/ham', 'email type', 'is_phishing']][0]
                 
                 temp_df = df[[text_col, label_col]].copy()
                 temp_df.columns = ['text', 'label']
+                # Truncate to keep size manageable but intelligence high
+                temp_df['text'] = temp_df['text'].astype(str).str.slice(0, 5000)
                 # Map labels: spam/phishing -> 1, ham/safe -> 0
-                temp_df['label'] = temp_df['label'].apply(lambda x: 1 if str(x).lower() in ['spam', 'phishing email', '1', 'phish', '1.0'] else 0)
+                temp_df['label'] = temp_df['label'].apply(lambda x: 1 if str(x).lower() in ['spam', 'phishing', '1', '1.0', 'phish'] else 0)
                 all_dfs.append(temp_df)
                 print(f"Loaded {len(temp_df)} rows from mirror.")
             except Exception as e:
@@ -103,8 +108,8 @@ def download_email_dataset():
     if all_dfs:
         final_df = pd.concat(all_dfs, ignore_index=True).drop_duplicates()
         
-        # Split into chunks of 20,000 rows to ensure each file is < 25MB
-        chunk_size = 20000
+        # Split into chunks of 30,000 rows for better compatibility
+        chunk_size = 30000
         for i in range(0, len(final_df), chunk_size):
             chunk = final_df.iloc[i:i+chunk_size]
             part_num = (i // chunk_size) + 1
@@ -112,7 +117,6 @@ def download_email_dataset():
             chunk.to_csv(filename, index=False, compression='gzip')
             print(f"Saved {filename}: {len(chunk)} rows")
         
-        # Clean up old combined file if it exists
         if os.path.exists("data/processed/emails_cleaned.csv.gz"):
             os.remove("data/processed/emails_cleaned.csv.gz")
 
