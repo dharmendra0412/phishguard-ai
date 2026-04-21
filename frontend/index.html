@@ -233,8 +233,8 @@
     </div>
 
     <script>
-        // Dynamic API Base: Use empty string for relative paths in production (Vercel)
-        const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
+        // Dynamic API Base: Use /api for production (Vercel), otherwise fallback to localhost
+        const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:8000" : "/api";
 
         async function scanURL() {
             const url = document.getElementById('urlInput').value;

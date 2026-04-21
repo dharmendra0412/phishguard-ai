@@ -12,11 +12,7 @@
   ],
   "routes": [
     {
-      "src": "/scan-url",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/scan-message",
+      "src": "/api/(.*)",
       "dest": "api/index.py"
     },
     {
