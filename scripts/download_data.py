@@ -16,16 +16,44 @@ def download_file(url, label):
         return None
 
 def download_sms_spam():
-    print("--- Processing SMS Spam ---")
-    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00228/smsspamcollection.zip"
-    r = download_file(url, "SMS Spam")
-    if r:
-        z = zipfile.ZipFile(io.BytesIO(r.content))
-        z.extractall("data/raw/sms_spam")
-        df = pd.read_csv("data/raw/sms_spam/SMSSpamCollection", sep='\t', names=['label', 'text'])
-        df['label'] = df['label'].map({'ham': 0, 'spam': 1})
-        df.to_csv("data/processed/sms_spam_cleaned.csv.gz", index=False, compression='gzip')
-        print(f"SMS Spam processed: {len(df)} rows (Compressed)")
+    print("--- Processing SMS Spam (Ultimate Scale: 80K+) ---")
+    mirrors = [
+        "https://huggingface.co/datasets/mshenoda/spam-messages/resolve/main/spam_messages_train.csv",
+        "https://raw.githubusercontent.com/shaghayegh-hp/Smishing_Dataset/main/Combined-Labeled-Dataset.csv",
+        "https://archive.ics.uci.edu/ml/machine-learning-databases/00228/smsspamcollection.zip"
+    ]
+    
+    all_dfs = []
+    for url in mirrors:
+        if url.endswith(".zip"):
+            r = download_file(url, "SMS Spam ZIP")
+            if r:
+                with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+                    with z.open('SMSSpamCollection') as f:
+                        df = pd.read_csv(f, sep='\t', names=['label', 'text'])
+                        df['label'] = df['label'].map({'ham': 0, 'spam': 1})
+                        all_dfs.append(df)
+        else:
+            r = download_file(url, "SMS Mirror")
+            if r:
+                try:
+                    df = pd.read_csv(io.StringIO(r.text))
+                    # Handle mshenoda and shaghayegh columns
+                    text_col = [c for c in df.columns if c.lower() in ['message', 'text']][0]
+                    label_col = [c for c in df.columns if c.lower() in ['label', 'spam', 'is_spam']][0]
+                    temp_df = df[[text_col, label_col]].copy()
+                    temp_df.columns = ['text', 'label']
+                    # Normalize labels
+                    temp_df['label'] = temp_df['label'].apply(lambda x: 1 if str(x).lower() in ['spam', '1', '1.0', 'smishing'] else 0)
+                    all_dfs.append(temp_df)
+                    print(f"Loaded {len(temp_df)} rows from mirror.")
+                except Exception as e:
+                    print(f"Error processing mirror {url}: {e}")
+                    
+    if all_dfs:
+        final_df = pd.concat(all_dfs, ignore_index=True).drop_duplicates()
+        final_df.to_csv("data/processed/sms_spam_cleaned.csv.gz", index=False, compression='gzip')
+        print(f"SMS Spam Ultimate Scale processed: {len(final_df)} rows")
 
 def download_url_dataset():
     print("--- Processing Phishing URLs (Ultimate Scale: 3M+) ---")
