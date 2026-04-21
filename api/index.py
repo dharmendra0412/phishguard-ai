@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
-app = FastAPI(title="PhishGuard AI Backend")
+app = FastAPI(title="PhishGuard AI Backend", root_path="/api")
 
 # Enable CORS for frontend
 app.add_middleware(
@@ -21,13 +21,17 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(BASE_DIR, "..", "models")
 
+print(f"Loading models from: {MODELS_DIR}")
 try:
     url_model = joblib.load(os.path.join(MODELS_DIR, "url_classifier.pkl"))
     text_model = joblib.load(os.path.join(MODELS_DIR, "text_classifier.pkl"))
     tfidf = joblib.load(os.path.join(MODELS_DIR, "tfidf_vectorizer.pkl"))
-    print("Models loaded successfully.")
+    print("✅ Models loaded successfully.")
 except Exception as e:
-    print(f"Error loading models: {e}. Ensure training is complete.")
+    print(f"❌ Error loading models: {e}")
+    url_model = None
+    text_model = None
+    tfidf = None
 
 class MessageRequest(BaseModel):
     text: str
@@ -53,6 +57,7 @@ def extract_url_features(url):
     return np.array(features).reshape(1, -1)
 
 @app.get("/")
+@app.get("")
 async def root():
     return {"status": "online", "system": "PhishGuard AI"}
 
