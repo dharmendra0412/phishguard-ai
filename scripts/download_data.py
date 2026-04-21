@@ -30,6 +30,7 @@ def download_sms_spam():
 def download_url_dataset():
     print("--- Processing Phishing URLs (Ultimate Scale: 3M+) ---")
     mirrors = [
+        "https://raw.githubusercontent.com/Sky-ey/mirror-phishtank/main/hosts.csv",
         "https://urlhaus.abuse.ch/downloads/csv/",
         "https://raw.githubusercontent.com/mango-cat/ECS171-Project/main/malicious_phish.csv",
         "https://raw.githubusercontent.com/mildsam/Phishing-Detection-System/main/dataset_phishing.csv"
@@ -40,7 +41,13 @@ def download_url_dataset():
         r = download_file(url, "URL Dataset Mirror")
         if r:
             try:
-                if "urlhaus" in url:
+                if "phishtank" in url:
+                    # PhishTank mirror structure: phish_id,url,phish_detail_url,submission_time,verified,verification_time,online,target
+                    df = pd.read_csv(io.StringIO(r.text))
+                    temp_df = pd.DataFrame()
+                    temp_df['url'] = df['url']
+                    temp_df['label'] = 1
+                elif "urlhaus" in url:
                     # URLhaus header line starts with #, so we define columns manually
                     import csv
                     cols = ['id', 'dateadded', 'url', 'url_status', 'threat', 'tags', 'urlhaus_link', 'reporter']
