@@ -41,11 +41,13 @@ def download_url_dataset():
         if r:
             try:
                 if "urlhaus" in url:
-                    # URLhaus skip comment lines starting with #
-                    df = pd.read_csv(io.StringIO(r.text), skiprows=8)
+                    # URLhaus header line starts with #, so we define columns manually
+                    import csv
+                    cols = ['id', 'dateadded', 'url', 'url_status', 'threat', 'tags', 'urlhaus_link', 'reporter']
+                    df = pd.read_csv(io.StringIO(r.text), comment='#', names=cols, on_bad_lines='skip', engine='python', quoting=csv.QUOTE_NONE)
                     temp_df = pd.DataFrame()
                     temp_df['url'] = df['url']
-                    temp_df['label'] = 1 # All in URLhaus are malicious
+                    temp_df['label'] = 1 
                 else:
                     df = pd.read_csv(io.StringIO(r.text))
                     url_col = 'url' if 'url' in df.columns else ('domain' if 'domain' in df.columns else df.columns[0])
