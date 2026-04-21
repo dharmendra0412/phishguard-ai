@@ -98,10 +98,11 @@ async def scan_message(req: MessageRequest):
         heuristic_boost += 0.1
         found_keywords.append("URL detected")
 
-    # 3. Safe Keywords (White-list boost)
+    # 3. Safe Keywords (Institutional Trust Signals)
     safe_keywords = {
-        'internship': -0.2, 'assignment': -0.15, 'course': -0.1,
-        'student': -0.1, 'university': -0.1, 'certificate': -0.05,
+        'internship': -0.3, 'assignment': -0.2, 'course': -0.15,
+        'student': -0.15, 'university': -0.2, 'certificate': -0.1,
+        'github': -0.2, 'linkedin': -0.2, 'portfolio': -0.15,
         'regards': -0.1, 'sincerely': -0.1, 'thank you': -0.1
     }
     
@@ -109,15 +110,19 @@ async def scan_message(req: MessageRequest):
         if word in text_lower:
             heuristic_boost += weight
 
-    # 4. Personalized Greeting Detection (Dear + Name)
+    # 4. Personalized Greeting Detection (High Trust Signal)
     if "dear " in text_lower:
-        # If there's more than 2 words after "Dear", it's likely a specific name
-        words_after_dear = text_lower.split("dear ")[1].split()[:3]
-        if len(words_after_dear) >= 2:
-            heuristic_boost -= 0.15 # Trust personalized emails more
+        name_part = text_lower.split("dear ")[1].split()[:4]
+        # If we have 2-3 words after Dear, it's very likely a real full name
+        if len(name_part) >= 2:
+            heuristic_boost -= 0.4 # Major trust for personalized full names
 
     # Combine (Cap at 0.99, min 0.0)
     final_prob = max(0.0, min(0.99, ml_prob + heuristic_boost))
+    
+    # If it's a very trusted professional email, force lower score
+    if heuristic_boost < -0.4:
+        final_prob = min(0.2, final_prob) # Force to "Safe" if highly trusted
     
     # False Positive Mitigation: If it looks professional but has promo words, downgrade to 'Marketing'
     is_marketing = False
