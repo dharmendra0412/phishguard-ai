@@ -75,14 +75,14 @@ def train_text_model():
         return
 
     df = pd.concat(dfs, ignore_index=True).dropna().drop_duplicates()
-    sample_size = min(len(df), 100000) # Ultimate Scale
+    sample_size = min(len(df), 500000) # Hyper Scale (10 Lakh+ era)
     df = df.sample(sample_size, random_state=42)
     print(f"Combined text dataset: {len(df)} samples")
     
     X_train, X_test, y_train, y_test = train_test_split(df['text'], df['label'], test_size=0.2, random_state=42)
     
-    # Vectorizer with bigrams and more features
-    vectorizer = TfidfVectorizer(max_features=15000, stop_words='english', ngram_range=(1, 2))
+    # Vectorizer with bigrams and hyper-scale features
+    vectorizer = TfidfVectorizer(max_features=20000, stop_words='english', ngram_range=(1, 2))
     X_train_tfidf = vectorizer.fit_transform(X_train.astype(str))
     X_test_tfidf = vectorizer.transform(X_test.astype(str))
     

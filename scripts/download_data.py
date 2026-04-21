@@ -38,9 +38,9 @@ def download_sms_spam():
             if r:
                 try:
                     df = pd.read_csv(io.StringIO(r.text))
-                    # Handle mshenoda and shaghayegh columns
-                    text_col = [c for c in df.columns if c.lower() in ['message', 'text']][0]
-                    label_col = [c for c in df.columns if c.lower() in ['label', 'spam', 'is_spam']][0]
+                    # Handle mshenoda and shaghayegh columns (Text/URL vs Label/Status)
+                    text_col = [c for c in df.columns if c.lower() in ['message', 'text', 'url', 'content']][0]
+                    label_col = [c for c in df.columns if c.lower() in ['label', 'spam', 'is_spam', 'status', 'type']][0]
                     temp_df = df[[text_col, label_col]].copy()
                     temp_df.columns = ['text', 'label']
                     # Normalize labels
@@ -58,6 +58,7 @@ def download_sms_spam():
 def download_url_dataset():
     print("--- Processing Phishing URLs (Ultimate Scale: 3M+) ---")
     mirrors = [
+        "https://huggingface.co/datasets/itsprofarul/dataset-phishing2/resolve/main/final_dataset_886k.csv?download=true",
         "https://raw.githubusercontent.com/Sky-ey/mirror-phishtank/main/hosts.csv",
         "https://urlhaus.abuse.ch/downloads/csv/",
         "https://raw.githubusercontent.com/mango-cat/ECS171-Project/main/malicious_phish.csv",
@@ -69,7 +70,13 @@ def download_url_dataset():
         r = download_file(url, "URL Dataset Mirror")
         if r:
             try:
-                if "phishtank" in url:
+                if "itsprofarul" in url:
+                    # itsprofarul structure: url, label
+                    df = pd.read_csv(io.StringIO(r.text))
+                    temp_df = pd.DataFrame()
+                    temp_df['url'] = df['url']
+                    temp_df['label'] = df['label']
+                elif "phishtank" in url:
                     # PhishTank mirror structure: phish_id,url,phish_detail_url,submission_time,verified,verification_time,online,target
                     df = pd.read_csv(io.StringIO(r.text))
                     temp_df = pd.DataFrame()
@@ -114,7 +121,8 @@ def download_url_dataset():
 def download_email_dataset():
     print("--- Processing Phishing Emails (Ultimate Scale: 150K+) ---")
     mirrors = [
-        "https://huggingface.co/datasets/HoangPhuc/data_spam_email/resolve/main/combined_data.csv",
+        "https://huggingface.co/datasets/locuoco/the-biggest-spam-ham-phish-email-dataset-300000/resolve/main/df.csv?download=true",
+        "https://huggingface.co/datasets/mshenoda/spam-messages/resolve/main/spam_messages_train.csv",
         "https://raw.githubusercontent.com/PuruSinghvi/Spam-Email-Classifier/main/Datasets/enron_spam_data.csv",
         "https://raw.githubusercontent.com/Matth-L/detectish/main/Phishing_Email.csv",
         "https://raw.githubusercontent.com/uzmabb182/Data_622/main/final_project_data_622/Phishing_Email.csv",
@@ -123,20 +131,21 @@ def download_email_dataset():
     
     all_dfs = []
     for url in mirrors:
-        r = download_file(url, "Email Dataset Mirror")
+        r = download_file(url, "Massive Email Mirror")
         if r:
             try:
-                df = pd.read_csv(io.StringIO(r.text))
+                # Use low_memory=False for huge files
+                df = pd.read_csv(io.StringIO(r.text), low_memory=False)
                 # Detect columns flexibly
-                text_col = [c for c in df.columns if c.lower() in ['text', 'message', 'email text', 'body']][0]
-                label_col = [c for c in df.columns if c.lower() in ['label', 'spam/ham', 'email type', 'is_phishing']][0]
+                text_col = [c for c in df.columns if c.lower() in ['text', 'message', 'email text', 'body', 'content']][0]
+                label_col = [c for c in df.columns if c.lower() in ['label', 'spam/ham', 'email type', 'is_phishing', 'class']][0]
                 
                 temp_df = df[[text_col, label_col]].copy()
                 temp_df.columns = ['text', 'label']
                 # Truncate to keep size manageable but intelligence high
-                temp_df['text'] = temp_df['text'].astype(str).str.slice(0, 5000)
-                # Map labels: spam/phishing -> 1, ham/safe -> 0
-                temp_df['label'] = temp_df['label'].apply(lambda x: 1 if str(x).lower() in ['spam', 'phishing', '1', '1.0', 'phish'] else 0)
+                temp_df['text'] = temp_df['text'].astype(str).str.slice(0, 3000)
+                # Map labels: spam/phishing/1 -> 1, ham/safe/0 -> 0
+                temp_df['label'] = temp_df['label'].apply(lambda x: 1 if str(x).lower() in ['spam', 'phishing', '1', '1.0', 'phish', 'bad'] else 0)
                 all_dfs.append(temp_df)
                 print(f"Loaded {len(temp_df)} rows from mirror.")
             except Exception as e:
@@ -145,8 +154,8 @@ def download_email_dataset():
     if all_dfs:
         final_df = pd.concat(all_dfs, ignore_index=True).drop_duplicates()
         
-        # Split into chunks of 30,000 rows for better compatibility
-        chunk_size = 30000
+        # Split into chunks of 50,000 rows for 1M+ data
+        chunk_size = 50000
         for i in range(0, len(final_df), chunk_size):
             chunk = final_df.iloc[i:i+chunk_size]
             part_num = (i // chunk_size) + 1
