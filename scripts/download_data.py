@@ -55,8 +55,19 @@ def download_url_dataset():
     
     if all_dfs:
         final_df = pd.concat(all_dfs, ignore_index=True).drop_duplicates()
-        final_df.to_csv("data/processed/urls_cleaned.csv.gz", index=False, compression='gzip')
-        print(f"Total URL Dataset: {len(final_df)} rows (Compressed)")
+        
+        # Split into chunks of 200,000 rows to ensure very small files
+        chunk_size = 200000
+        for i in range(0, len(final_df), chunk_size):
+            chunk = final_df.iloc[i:i+chunk_size]
+            part_num = (i // chunk_size) + 1
+            filename = f"data/processed/urls_cleaned_part_{part_num}.csv.gz"
+            chunk.to_csv(filename, index=False, compression='gzip')
+            print(f"Saved {filename}: {len(chunk)} rows")
+        
+        # Clean up old combined file
+        if os.path.exists("data/processed/urls_cleaned.csv.gz"):
+            os.remove("data/processed/urls_cleaned.csv.gz")
 
 def download_email_dataset():
     print("--- Processing Phishing Emails (Ultra Scale: 50K+) ---")

@@ -30,11 +30,9 @@ venv/
 env/
 .env
 
-# Data and Models (Too large for GitHub)
+# Data and Models (Excluding only raw data and uncompressed CSVs)
 data/raw/
 data/processed/*.csv
-data/processed/*.csv.gz
-models/*.pkl
 
 # VS Code
 .vscode/

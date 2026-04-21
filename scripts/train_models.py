@@ -31,12 +31,14 @@ def extract_url_features(url):
 
 def train_url_model():
     print("Training URL Classifier (Large-Scale)...")
-    if not os.path.exists("data/processed/urls_cleaned.csv.gz"):
+    import glob
+    url_parts = glob.glob("data/processed/urls_cleaned_part_*.csv.gz")
+    if not url_parts:
         print("URL dataset not found. Run download_data.py first.")
         return
 
-    # Pandas handles .gz automatically
-    df = pd.read_csv("data/processed/urls_cleaned.csv.gz")
+    dfs = [pd.read_csv(p) for p in url_parts]
+    df = pd.concat(dfs, ignore_index=True)
     sample_size = min(len(df), 100000) # Increased scale
     df = df.sample(sample_size, random_state=42)
     X = np.array([extract_url_features(u) for u in df['url']])
