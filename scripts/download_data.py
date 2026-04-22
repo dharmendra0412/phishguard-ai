@@ -18,8 +18,10 @@ def download_file(url, label):
 def download_sms_spam():
     print("--- Processing SMS Spam (Ultimate Scale: 80K+) ---")
     mirrors = [
+        "https://huggingface.co/datasets/alusci/sms-otp-spam-dataset/raw/main/SMS_OTP_10000_samples.csv",
+        "https://huggingface.co/datasets/DarkNeuronAI/spam-sms-collection-01/resolve/main/spam.csv",
+        "https://raw.githubusercontent.com/junioralive/india-spam-sms-classification/main/dataset/spam_ham_india.csv",
         "https://huggingface.co/datasets/mshenoda/spam-messages/resolve/main/spam_messages_train.csv",
-        "https://raw.githubusercontent.com/shaghayegh-hp/Smishing_Dataset/main/Combined-Labeled-Dataset.csv",
         "https://archive.ics.uci.edu/ml/machine-learning-databases/00228/smsspamcollection.zip"
     ]
     
@@ -38,15 +40,32 @@ def download_sms_spam():
             if r:
                 try:
                     df = pd.read_csv(io.StringIO(r.text))
-                    # Handle mshenoda and shaghayegh columns (Text/URL vs Label/Status)
-                    text_col = [c for c in df.columns if c.lower() in ['message', 'text', 'url', 'content']][0]
-                    label_col = [c for c in df.columns if c.lower() in ['label', 'spam', 'is_spam', 'status', 'type']][0]
-                    temp_df = df[[text_col, label_col]].copy()
-                    temp_df.columns = ['text', 'label']
-                    # Normalize labels
-                    temp_df['label'] = temp_df['label'].apply(lambda x: 1 if str(x).lower() in ['spam', '1', '1.0', 'smishing'] else 0)
-                    all_dfs.append(temp_df)
-                    print(f"Loaded {len(temp_df)} rows from mirror.")
+                    # Robust Column Detection
+                    cols = [c.lower() for c in df.columns]
+                    text_col = ""
+                    label_col = ""
+                    
+                    # Look for text
+                    for candidate in ['message', 'text', 'v2', 'content', 'sms', 'sms_text', 'msg']:
+                        if candidate in cols:
+                            text_col = df.columns[cols.index(candidate)]
+                            break
+                    
+                    # Look for label
+                    for candidate in ['label', 'v1', 'spam', 'is_spam', 'status', 'type', 'category']:
+                        if candidate in cols:
+                            label_col = df.columns[cols.index(candidate)]
+                            break
+                            
+                    if text_col and label_col:
+                        temp_df = df[[text_col, label_col]].copy()
+                        temp_df.columns = ['text', 'label']
+                        # Normalize labels: 1 for spam/phish, 0 for ham/safe
+                        temp_df['label'] = temp_df['label'].apply(lambda x: 1 if str(x).lower() in ['spam', '1', '1.0', 'smishing', 'phishing'] else 0)
+                        all_dfs.append(temp_df)
+                        print(f"Loaded {len(temp_df)} rows from mirror.")
+                    else:
+                        print(f"Could not find columns in {url}. Found: {df.columns.tolist()}")
                 except Exception as e:
                     print(f"Error processing mirror {url}: {e}")
                     

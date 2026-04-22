@@ -70,7 +70,9 @@ async def scan_message(req: MessageRequest):
         'suspension': 0.2, 'amazon.com': 0.15, 'paypal': 0.15, 'bank': 0.1,
         'credited': 0.25, 'withdraw': 0.2, ' rs.': 0.2, 'rs. ': 0.2, '₹': 0.2,
         'win': 0.15, 'gift': 0.1, 'claim': 0.15, 'bit.ly': 0.3, 'tinyurl': 0.3,
-        'कैशबैक': 0.2, 'फ्री': 0.15, 'ऑफर': 0.1, 'मुफ्त': 0.15, 'जीतो': 0.2
+        'कैशबैक': 0.2, 'फ्री': 0.15, 'ऑफर': 0.1, 'मुफ्त': 0.15, 'जीतो': 0.2,
+        'invest': 0.1, 'shares': 0.1, 'unlisted': 0.15, 'performance': 0.05,
+        'growth': 0.05, 'profits': 0.1, 'opportunity': 0.1, 'exclusive': 0.1
     }
     
     heuristic_boost = 0
@@ -124,9 +126,9 @@ async def scan_message(req: MessageRequest):
             final_prob -= 0.1 # Slight reduction for professional sign-offs
 
     prediction = "phishing" if final_prob > 0.45 else "safe"
-    if final_prob > 0.3 and final_prob <= 0.45:
+    if final_prob > 0.25 and final_prob <= 0.45:
         prediction = "marketing / spam"
-    elif final_prob > 0.45 and final_prob < 0.7:
+    elif final_prob > 0.45 and final_prob < 0.65:
         prediction = "suspicious"
 
     reason = "ML Classifier"
