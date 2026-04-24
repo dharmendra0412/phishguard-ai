@@ -30,9 +30,14 @@ venv/
 env/
 .env
 
-# Data and Models (Excluding only raw data and uncompressed CSVs)
-data/raw/
-data/processed/*.csv
+# Data and Models
+data/
+models/url_classifier.pkl
+local_brain.txt
+threat_reports.json
+
+# Ensure model parts are included
+!models/*.part*
 
 # VS Code
 .vscode/

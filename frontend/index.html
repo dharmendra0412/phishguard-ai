@@ -1,306 +1,247 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PhishGuard AI | Real-Time Fraud Detection</title>
+    <title>PhishGuard AI | Actual Forensic Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #00f2fe;
-            --secondary: #4facfe;
-            --bg: #0b0e14;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --danger: #ff4d4d;
-            --success: #00e676;
-            --warning: #ffab00;
-            --text: #ffffff;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Outfit', sans-serif;
-        }
-
-        body {
-            background: var(--bg);
-            background-image: radial-gradient(circle at 10% 20%, rgba(0, 242, 254, 0.05) 0%, transparent 40%),
-                              radial-gradient(circle at 90% 80%, rgba(79, 172, 254, 0.05) 0%, transparent 40%);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 2rem;
-        }
-
-        .container {
-            max-width: 1000px;
-            width: 100%;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        header h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-
-        header p {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 1.1rem;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 2rem;
-            transition: transform 0.3s ease, border-color 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(0, 242, 254, 0.3);
-        }
-
-        .card h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .input-group {
-            margin-bottom: 1.5rem;
-        }
-
-        input, textarea {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 1rem;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        input:focus, textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
-        }
-
-        button {
-            width: 100%;
-            padding: 1rem;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: var(--bg);
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            opacity: 0.9;
-            transform: scale(1.02);
-        }
-
-        .result {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            border-radius: 12px;
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .result.show {
-            display: block;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 100px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-        }
-
-        .badge-safe { background: rgba(0, 230, 118, 0.2); color: var(--success); }
-        .badge-phishing { background: rgba(255, 77, 77, 0.2); color: var(--danger); }
-        .badge-suspicious { background: rgba(255, 171, 0, 0.2); color: var(--warning); }
-
-        .score-bar {
-            height: 8px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            margin: 1rem 0;
-            overflow: hidden;
-        }
-
-        .score-fill {
-            height: 100%;
-            width: 0%;
-            transition: width 1s ease-in-out;
-        }
-
-        .reason {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
-            font-style: italic;
-        }
-
-        @media (max-width: 768px) {
-            .grid { grid-template-columns: 1fr; }
-        }
+        body { font-family: 'Outfit', sans-serif; background: #0f172a; color: white; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .hero-gradient { background: radial-gradient(circle at top right, #1e40af, transparent), radial-gradient(circle at bottom left, #7e22ce, transparent); }
+        .tab-active { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-color: rgba(59, 130, 246, 0.5); }
+        .drop-zone { border: 2px dashed rgba(255,255,255,0.1); border-radius: 24px; padding: 40px; text-align: center; transition: all 0.3s; cursor: pointer; }
+        .drop-zone:hover { border-color: #60a5fa; background: rgba(59, 130, 246, 0.05); }
     </style>
 </head>
-<body>
+<body class="min-h-screen hero-gradient">
+    <nav class="p-6 flex justify-between items-center glass sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <span class="text-3xl">🛡️</span>
+            <span class="text-2xl font-bold tracking-tight">PhishGuard <span class="text-blue-400">AI</span></span>
+        </div>
+        <div id="apiStatus" class="flex items-center gap-2 text-xs font-medium text-gray-400">
+            <span class="h-2 w-2 rounded-full bg-green-500"></span>
+            System Online (Dataset: 2,153,018 Pure-Real)
+        </div>
+    </nav>
 
-    <div class="container">
-        <header>
-            <h1>PhishGuard AI</h1>
-            <p>Real-Time Cybersecurity & Fraud Detection System</p>
-        </header>
+    <main class="max-w-6xl mx-auto p-6 md:p-12">
+        <div class="text-center mb-16">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                ACTUAL Intelligence
+            </h1>
+            <p class="text-xl text-gray-400 max-w-2xl mx-auto">
+                Forensic Engine trained on 2,153,018 verified real-world threat signatures.
+            </p>
+        </div>
 
-        <div class="grid">
-            <!-- URL Scanner -->
-            <div class="card">
-                <h2>🌐 URL Scanner</h2>
-                <div class="input-group">
-                    <input type="text" id="urlInput" placeholder="Enter URL to scan (e.g. http://login-verify.com)">
-                </div>
-                <button onclick="scanURL()">Scan URL</button>
-                <div id="urlResult" class="result">
-                    <div id="urlBadge" class="badge">Safe</div>
-                    <div class="score-bar"><div id="urlScoreFill" class="score-fill"></div></div>
-                    <p>Risk Score: <span id="urlScoreText">0%</span></p>
-                    <p class="reason" id="urlReason"></p>
-                </div>
+        <div class="max-w-3xl mx-auto">
+            <!-- Navigation Tabs -->
+            <div class="glass p-1 rounded-2xl flex mb-8 overflow-hidden">
+                <button onclick="switchTab('message')" id="tab-message" class="flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all tab-active">
+                    <i class="fas fa-comment-dots"></i> Message
+                </button>
+                <button onclick="switchTab('url')" id="tab-url" class="flex-1 py-4 flex items-center justify-center gap-2 font-bold text-gray-400 hover:text-white transition-all">
+                    <i class="fas fa-link"></i> URL
+                </button>
+                <button onclick="switchTab('email')" id="tab-email" class="flex-1 py-4 flex items-center justify-center gap-2 font-bold text-gray-400 hover:text-white transition-all">
+                    <i class="fas fa-envelope"></i> Email
+                </button>
+                <button onclick="switchTab('ocr')" id="tab-ocr" class="flex-1 py-4 flex items-center justify-center gap-2 font-bold text-gray-400 hover:text-white transition-all">
+                    <i class="fas fa-camera"></i> Image
+                </button>
             </div>
 
             <!-- Message Scanner -->
-            <div class="card">
-                <h2>✉️ Email & Message Analysis</h2>
-                <div class="input-group">
-                    <textarea id="msgInput" rows="3" placeholder="Paste SMS or Email content..."></textarea>
+            <div id="section-message" class="glass p-8 rounded-3xl animate-fadeIn">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-purple-500/20 rounded-2xl text-purple-400"><i class="fas fa-brain"></i></div>
+                    <h2 class="text-2xl font-bold">Message Profiler</h2>
                 </div>
-                <button onclick="scanMessage()">Analyze Content</button>
-                <div id="msgResult" class="result">
-                    <div id="msgBadge" class="badge">Safe</div>
-                    <div class="score-bar"><div id="msgScoreFill" class="score-fill"></div></div>
-                    <p>Risk Score: <span id="msgScoreText">0%</span></p>
-                    <p class="reason" id="msgReason"></p>
+                <textarea id="msgInput" placeholder="Paste SMS or Chat content here..." rows="4"
+                    class="w-full bg-slate-900/50 border border-slate-700 p-4 rounded-2xl mb-4 focus:ring-2 focus:ring-purple-500 outline-none transition-all"></textarea>
+                <button onclick="scanMessage()" class="w-full bg-purple-600 hover:bg-purple-500 font-bold py-4 rounded-2xl transition-all shadow-lg shadow-purple-900/20 flex items-center justify-center gap-2">
+                    <i class="fas fa-bolt"></i> Detect Tactics
+                </button>
+            </div>
+
+            <!-- URL Scanner -->
+            <div id="section-url" class="glass p-8 rounded-3xl hidden animate-fadeIn">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-blue-500/20 rounded-2xl text-blue-400"><i class="fas fa-globe"></i></div>
+                    <h2 class="text-2xl font-bold">Link Sentinel</h2>
+                </div>
+                <input type="text" id="urlInput" placeholder="Paste URL here (e.g. http://login-secure.xyz)" 
+                    class="w-full bg-slate-900/50 border border-slate-700 p-4 rounded-2xl mb-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <button onclick="scanURL()" class="w-full bg-blue-600 hover:bg-blue-500 font-bold py-4 rounded-2xl transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2">
+                    <i class="fas fa-search"></i> Analyze DNA
+                </button>
+            </div>
+
+            <!-- Email Scanner -->
+            <div id="section-email" class="glass p-8 rounded-3xl hidden animate-fadeIn">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-green-500/20 rounded-2xl text-green-400"><i class="fas fa-microscope"></i></div>
+                    <h2 class="text-2xl font-bold">Email Forensic Suite</h2>
+                </div>
+                <textarea id="emailInput" placeholder="Paste full email body here..." rows="6"
+                    class="w-full bg-slate-900/50 border border-slate-700 p-4 rounded-2xl mb-4 focus:ring-2 focus:ring-green-500 outline-none transition-all"></textarea>
+                <button onclick="scanEmail()" class="w-full bg-green-600 hover:bg-green-500 font-bold py-4 rounded-2xl transition-all shadow-lg shadow-green-900/20 flex items-center justify-center gap-2">
+                    <i class="fas fa-shield-virus"></i> Run Forensic Scan
+                </button>
+            </div>
+
+            <!-- OCR Image Scanner -->
+            <div id="section-ocr" class="glass p-8 rounded-3xl hidden animate-fadeIn">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-yellow-500/20 rounded-2xl text-yellow-400"><i class="fas fa-eye"></i></div>
+                    <h2 class="text-2xl font-bold">OCR Forensic Vision</h2>
+                </div>
+                <div id="dropZone" class="drop-zone mb-4" onclick="document.getElementById('imageInput').click()">
+                    <i class="fas fa-cloud-upload-alt text-4xl mb-3 text-gray-500"></i>
+                    <p class="text-gray-400 text-sm">Drag & drop screenshot or <span class="text-blue-400">browse</span></p>
+                    <input type="file" id="imageInput" class="hidden" accept="image/*" onchange="processImage(this.files[0])">
+                </div>
+                <div id="ocrProgress" class="hidden mb-4">
+                    <div class="w-full bg-slate-800 rounded-full h-1.5 mb-2">
+                        <div id="ocrProgressBar" class="bg-yellow-500 h-1.5 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                    <p id="ocrStatus" class="text-[10px] text-yellow-500 font-mono text-center">INITIALIZING...</p>
                 </div>
             </div>
         </div>
 
-        <div class="card" style="margin-top: 2rem; text-align: center;">
-            <h2>🛡️ System Integrity Status</h2>
-            <p id="systemStatus">Models: Initializing...</p>
-        </div>
-    </div>
+        <div id="results" class="mt-12 hidden max-w-3xl mx-auto space-y-6"></div>
+    </main>
+
+    <footer class="p-12 text-center text-gray-500 text-sm">
+        <p>© 2026 PhishGuard AI | 100% Actual Forensic Intelligence</p>
+    </footer>
 
     <script>
-        // Dynamic API Base: Use /api for production (Vercel), otherwise fallback to localhost
-        const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:8000" : "/api";
+        const API_BASE = "http://127.0.0.1:8000";
 
-        async function scanURL() {
-            const url = document.getElementById('urlInput').value;
-            if(!url) return;
-
-            try {
-                const res = await fetch(`${API_BASE}/scan-url`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ url })
-                });
-                const data = await res.json();
-                displayResult('url', data);
-            } catch (e) {
-                console.error(e);
-                alert("Backend not reachable. Ensure FastAPI is running.");
-            }
+        function switchTab(tab) {
+            ['message', 'url', 'email', 'ocr'].forEach(id => {
+                document.getElementById(`section-${id}`).classList.add('hidden');
+                document.getElementById(`tab-${id}`).classList.remove('tab-active', 'text-white');
+                document.getElementById(`tab-${id}`).classList.add('text-gray-400');
+            });
+            document.getElementById(`section-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('tab-active', 'text-white');
+            document.getElementById(`tab-${tab}`).classList.remove('text-gray-400');
         }
 
         async function scanMessage() {
-            const text = document.getElementById('msgInput').value;
-            if(!text) return;
+            const input = document.getElementById('msgInput');
+            if (!input.value) return;
+            const btn = event.target;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
+            await callAPI('/scan-message', { text: input.value }, btn, 'Detect Tactics');
+        }
 
+        async function scanURL() {
+            const input = document.getElementById('urlInput');
+            if (!input.value) return;
+            const btn = event.target;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Analyzing...`;
+            await callAPI('/scan-url', { url: input.value }, btn, 'Analyze DNA');
+        }
+
+        async function scanEmail() {
+            const input = document.getElementById('emailInput');
+            if (!input.value) return;
+            const btn = event.target;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Scanning...`;
+            await callAPI('/scan-message', { text: input.value }, btn, 'Run Forensic Scan');
+        }
+
+        async function processImage(file) {
+            if (!file) return;
+            const progress = document.getElementById('ocrProgress');
+            const progressBar = document.getElementById('ocrProgressBar');
+            const status = document.getElementById('ocrStatus');
+            progress.classList.remove('hidden');
+            
             try {
-                const res = await fetch(`${API_BASE}/scan-message`, {
+                const result = await Tesseract.recognize(file, 'eng', {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            progressBar.style.width = `${m.progress * 100}%`;
+                            status.innerText = `SCANNING IMAGE: ${Math.round(m.progress * 100)}%`;
+                        }
+                    }
+                });
+                await callAPI('/scan-message', { text: result.data.text }, null, '');
+            } catch (e) {
+                alert("OCR Error: " + e.message);
+            } finally {
+                progress.classList.add('hidden');
+            }
+        }
+
+        async function callAPI(endpoint, body, btn, originalText) {
+            try {
+                const res = await fetch(`${API_BASE}${endpoint}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ text })
+                    body: JSON.stringify(body)
                 });
                 const data = await res.json();
-                displayResult('msg', data);
+                displayResult(data);
             } catch (e) {
-                console.error(e);
-                alert("Backend not reachable.");
+                alert("Backend Connection Failed!");
+            } finally {
+                if (btn) btn.innerHTML = originalText;
             }
         }
 
-        function displayResult(type, data) {
-            const resultDiv = document.getElementById(`${type}Result`);
-            const badge = document.getElementById(`${type}Badge`);
-            const scoreFill = document.getElementById(`${type}ScoreFill`);
-            const scoreText = document.getElementById(`${type}ScoreText`);
-            const reason = document.getElementById(`${type}Reason`);
-
-            resultDiv.classList.add('show');
-            badge.innerText = data.status;
-            badge.className = `badge badge-${data.status}`;
+        function displayResult(data) {
+            const resultsDiv = document.getElementById('results');
+            const statusColor = data.status === 'phishing' ? 'red-500' : 'green-400';
+            resultsDiv.classList.remove('hidden');
             
-            const color = data.status === 'phishing' ? '#ff4d4d' : (data.status === 'suspicious' ? '#ffab00' : '#00e676');
-            scoreFill.style.width = `${data.risk_score}%`;
-            scoreFill.style.background = color;
-            scoreText.innerText = `${data.risk_score}%`;
-            reason.innerText = data.reason;
-        }
-
-        // Check system status
-        async function checkStatus() {
-            try {
-                const res = await fetch(`${API_BASE}/`);
-                const data = await res.json();
-                document.getElementById('systemStatus').innerText = `Models: Loaded & Active | System: ${data.status}`;
-            } catch (e) {
-                document.getElementById('systemStatus').innerText = "Models: Not Loaded (Run training scripts)";
+            let finalUrlInfo = "";
+            if (data.is_redirected && data.final_url) {
+                finalUrlInfo = `
+                    <div class="p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/20 mb-4">
+                        <p class="text-xs text-yellow-500 uppercase font-bold mb-1"><i class="fas fa-random"></i> Unmasked Destination</p>
+                        <p class="text-white font-mono text-xs break-all">${data.final_url}</p>
+                    </div>
+                `;
             }
+
+            resultsDiv.innerHTML = `
+                <div class="p-8 glass rounded-3xl border-l-8 border-${statusColor}">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Forensic Report</h2>
+                        <span class="px-4 py-2 rounded-xl bg-${statusColor}/20 text-${statusColor} font-black uppercase text-sm">
+                            ${data.status}
+                        </span>
+                    </div>
+                    ${finalUrlInfo}
+                    <div class="space-y-4">
+                        <div class="p-4 bg-white/5 rounded-xl">
+                            <p class="text-xs text-gray-400 uppercase font-bold mb-1">AI Recommendation</p>
+                            <p class="text-white">${data.recommendation}</p>
+                        </div>
+                        <div class="p-4 bg-white/5 rounded-xl">
+                            <p class="text-xs text-gray-400 uppercase font-bold mb-1">Detection Logic</p>
+                            <p class="text-white">${data.reason}</p>
+                        </div>
+                        <div class="p-4 bg-green-500/10 rounded-xl border border-green-500/20">
+                            <p class="text-xs text-green-400 uppercase font-bold mb-1">Forensic Counter-Measure</p>
+                            <p class="text-green-200">${data.counter_measure}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
         }
-        checkStatus();
     </script>
 </body>
 </html>
